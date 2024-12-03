@@ -8,12 +8,23 @@
     <artifactId>P4_M06_arnau_marcos</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <!-- Dependència per al fitxer .env -->
-    <dependency>
-        <groupId>io.github.cdimascio</groupId>
-        <artifactId>dotenv-java</artifactId>
-        <version>3.0.0</version>
-    </dependency>
+    <dependencies>
+
+        <!-- Dependència per al driver MySQL -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.33</version>
+        </dependency>
+
+        <!-- Dependència per al fitxer .env -->
+        <dependency>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>dotenv-java</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+    </dependencies>
 
     <properties>
         <maven.compiler.source>22</maven.compiler.source>

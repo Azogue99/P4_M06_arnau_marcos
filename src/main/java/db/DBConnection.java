@@ -1,68 +1,78 @@
 package db;
 
-import org.xmldb.api.DatabaseManager;
-import org.xmldb.api.base.Collection;
-import org.xmldb.api.base.Database;
-import org.xmldb.api.base.XMLDBException;
-
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Properties;
 
 public class DBConnection {
-    private static String URI;
-    private static String COLLECTION_PATH;
+    private static String DB_URL_BASE;
+    private static String DATABASE_NAME;
     private static String USERNAME;
     private static String PASSWORD;
+    private static String DB_URL; // Full database URL
 
     static {
         try (InputStream input = DBConnection.class.getClassLoader().getResourceAsStream(".env")) {
-            Properties props = new Properties();
             if (input == null) {
-                throw new IOException("Unable to find .env file");
+                throw new IOException("No s'ha pogut trobar el fitxer .env");
             }
+
+            Properties props = new Properties();
             props.load(input);
-            URI = props.getProperty("URI");
-            COLLECTION_PATH = props.getProperty("COLLECTION_PATH");
+
+            DB_URL_BASE = props.getProperty("DB_URL_BASE");
+            DATABASE_NAME = props.getProperty("DATABASE_NAME");
+            DB_URL = DB_URL_BASE + DATABASE_NAME;
+
             USERNAME = props.getProperty("USERNAME");
             PASSWORD = props.getProperty("PASSWORD");
         } catch (IOException e) {
-            System.err.println("Error loading .env file: " + e.getMessage());
+            System.err.println("Error carregant el fitxer .env: " + e.getMessage());
         }
     }
 
-    public static Collection getCollection() throws Exception {
+    public static String getDbUrlBase() {
+        return DB_URL_BASE;
+    }
+
+    public static String getDatabaseName() {
+        return DATABASE_NAME;
+    }
+
+    public static String getUsername() {
+        return USERNAME;
+    }
+
+    public static String getPassword() {
+        return PASSWORD;
+    }
+
+    /**
+     * Provides a Connection object to the configured database.
+     *
+     * @return a Connection object.
+     * @throws SQLException if the connection fails.
+     */
+    public static Connection getConnection() throws SQLException {
         try {
-            // Registro de la base de datos eXistDB
-            Class<?> cl = Class.forName("org.exist.xmldb.DatabaseImpl");
-            Database database = (Database) cl.getDeclaredConstructor().newInstance();
-            DatabaseManager.registerDatabase(database);
-
-            // Conexión a la colección
-            Collection col = DatabaseManager.getCollection(URI + COLLECTION_PATH, USERNAME, PASSWORD);
-            if (col == null) {
-                System.err.println("Error: Unable to access collection at path " + COLLECTION_PATH + ". Please verify that the collection exists and the URI is correct.");
-                return null;
-            }
-            System.out.println("Successfully connected to collection: " + COLLECTION_PATH);
-            return col;
-        } catch (XMLDBException e) {
-            System.err.println("XMLDBException: " + e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            System.err.println("General error during connection setup: " + e.getMessage());
-            throw e;
+            Class.forName("com.mysql.cj.jdbc.Driver"); // Load MySQL driver
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Driver MySQL no trobat", e);
         }
+
+        // Establish and return a connection
+        return DriverManager.getConnection(DB_URL, USERNAME, PASSWORD);
     }
 
-    public static void closeCollection(Collection col) {
-        if (col != null) {
-            try {
-                col.close();
-                System.out.println("Collection closed successfully.");
-            } catch (XMLDBException e) {
-                System.err.println("Error closing collection: " + e.getMessage());
-            }
+    public static Connection getRawConnection(String dbUrlBase, String username, String password) throws SQLException {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver"); // Load MySQL driver
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("Driver MySQL no trobat", e);
         }
+        return DriverManager.getConnection(dbUrlBase, username, password);
     }
 }
